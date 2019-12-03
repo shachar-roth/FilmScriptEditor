@@ -1,0 +1,33 @@
+﻿<Window x:Class="FilmScriptEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:self="clr-namespace:FilmScriptEditor"
+        mc:Ignorable="d"
+        Title="MainWindow"
+        Background="Gray">
+    <Window.CommandBindings>
+        <CommandBinding Command="self:CustomCommands.NewScene" CanExecute="ExitCommand_CanExecute" Executed="CreateNewScene" />
+        <CommandBinding Command="self:CustomCommands.OnEnter" CanExecute="OnEnter_CanExecute" Executed="OnEnter_Executed" />
+        <CommandBinding Command="self:CustomCommands.ChangeMode" CanExecute="ChangeMode_CanExecute" Executed="ChangeMode_Executed" />
+    </Window.CommandBindings>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Menu HorizontalAlignment="Right">
+            <MenuItem Header="סצנה חדשה" Command="self:CustomCommands.NewScene" />
+            <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
+        </Menu>
+        <ScrollViewer Grid.Row="1">
+            <FlowDocumentPageViewer BorderThickness="1" BorderBrush="Black" Margin="0,0.5cm,0,0.5cm">
+                <FlowDocument FlowDirection="RightToLeft" Name="document"
+                              PageHeight="29.7cm" PageWidth="21cm" PagePadding="2cm,3cm,2cm,1.3cm"
+                              FontFamily="Courier New" FontSize="12">
+                </FlowDocument>
+            </FlowDocumentPageViewer>
+        </ScrollViewer>
+    </Grid>
+</Window>
