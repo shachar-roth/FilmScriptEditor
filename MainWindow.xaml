@@ -22,12 +22,17 @@
             <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
         </Menu>
         <ScrollViewer Grid.Row="1">
-            <FlowDocumentPageViewer BorderThickness="1" BorderBrush="Black" Margin="0,0.5cm,0,0.5cm">
-                <FlowDocument FlowDirection="RightToLeft" Name="document"
-                              PageHeight="29.7cm" PageWidth="21cm" PagePadding="2cm,3cm,2cm,1.3cm"
-                              FontFamily="Courier New" FontSize="12">
+            <RichTextBox FontFamily="Courier New" FontSize="12" Name="textBox"
+                     Width="21cm" Height="29.7cm"
+                     BorderThickness="1" BorderBrush="Black"
+                     Padding="2cm,3cm,2cm,1.3cm" Background="White"
+                     Margin="0.5cm">
+                <RichTextBox.InputBindings>
+                    <KeyBinding Command="self:CustomCommands.OnEnter" Key="Enter" />
+                </RichTextBox.InputBindings>
+                <FlowDocument FlowDirection="RightToLeft" Name="document">
                 </FlowDocument>
-            </FlowDocumentPageViewer>
+            </RichTextBox>
         </ScrollViewer>
     </Grid>
 </Window>
