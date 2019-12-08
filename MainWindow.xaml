@@ -5,34 +5,50 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:self="clr-namespace:FilmScriptEditor"
         mc:Ignorable="d"
-        Title="MainWindow"
-        Background="Gray">
+        Title="Hebrew Film Script Editor"
+        Icon="icon.png">
     <Window.CommandBindings>
         <CommandBinding Command="self:CustomCommands.NewScene" CanExecute="ExitCommand_CanExecute" Executed="CreateNewScene" />
         <CommandBinding Command="self:CustomCommands.OnEnter" CanExecute="OnEnter_CanExecute" Executed="OnEnter_Executed" />
         <CommandBinding Command="self:CustomCommands.ChangeMode" CanExecute="ChangeMode_CanExecute" Executed="ChangeMode_Executed" />
     </Window.CommandBindings>
+    <Window.Background>
+        <ImageBrush ImageSource="background.jpg"></ImageBrush>
+    </Window.Background>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Menu HorizontalAlignment="Right">
+            <TextBlock Text="{Binding PageCountText, Mode=OneWay}" />
             <MenuItem Header="סצנה חדשה" Command="self:CustomCommands.NewScene" />
             <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
         </Menu>
+
         <ScrollViewer Grid.Row="1">
-            <RichTextBox FontFamily="Courier New" FontSize="12" Name="textBox"
-                     Width="21cm" Height="29.7cm"
-                     BorderThickness="1" BorderBrush="Black"
-                     Padding="2cm,3cm,2cm,1.3cm" Background="White"
-                     Margin="0.5cm">
-                <RichTextBox.InputBindings>
-                    <KeyBinding Command="self:CustomCommands.OnEnter" Key="Enter" />
-                </RichTextBox.InputBindings>
-                <FlowDocument FlowDirection="RightToLeft" Name="document">
-                </FlowDocument>
-            </RichTextBox>
+            <Grid HorizontalAlignment="Center" Margin="0.5cm">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1cm" />
+                    <ColumnDefinition Width="21cm" />
+                    <ColumnDefinition Width="1cm" />
+                </Grid.ColumnDefinitions>
+
+                <RichTextBox FontFamily="Courier New" FontSize="12" Name="textBox"
+                     Width="21cm"
+                     Background="White"
+                     Padding="2cm,0,2cm,0"
+                     Grid.Column="1">
+                    <RichTextBox.InputBindings>
+                        <KeyBinding Command="self:CustomCommands.OnEnter" Key="Enter" />
+                    </RichTextBox.InputBindings>
+                    <FlowDocument FlowDirection="RightToLeft" Name="document"
+                              PageHeight="25.4cm" PageWidth="17cm">
+                    </FlowDocument>
+                </RichTextBox>
+                <Canvas Grid.ColumnSpan="3" Name="canvas">
+                </Canvas>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Window>

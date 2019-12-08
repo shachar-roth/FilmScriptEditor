@@ -1,18 +1,55 @@
-﻿using System.Linq;
+﻿using System;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace FilmScriptEditor
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        public const double pageSizeCm = 25.4;
+        public const double topPaddingCm = 0;
+        public const double cm2px = 37.795275590551178;
+
+        private double pageCount;
+
+        public double PageCount
+        {
+            get => pageCount;
+            set
+            {
+                if (pageCount == value || double.IsInfinity(value))
+                    return;
+
+                pageCount = value;
+                AddPageLines();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PageCountText"));
+            }
+        }
+
+        public string PageCountText => $"מספר עמודים כולל: {PageCount}";
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
+
+            textBox.TextChanged += (_, __) => RefreshPageCount();
+        }
+
+        private void DocumentPaginator_ComputePageCountCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            throw new System.NotImplementedException();
         }
 
         private void ExitCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -114,14 +151,14 @@ namespace FilmScriptEditor
 
         private void CreateNewScene(object sender, ExecutedRoutedEventArgs e)
         {
-            Paragraph p = new SceneHeader();
-            ListItem currentScene = textBox.CaretPosition.Paragraph?.Parent as ListItem;
-            Scences scenes = (Scences)document.Blocks.FirstBlock;
+            Scences scenes = document.Blocks.FirstBlock as Scences;
             if (scenes == null)
             {
                 scenes = new Scences();
                 document.Blocks.Add(scenes);
             }
+            Paragraph p = new SceneHeader();
+            ListItem currentScene = textBox.CaretPosition.Paragraph?.Parent as ListItem;
             if (currentScene != null)
             {
                 scenes.ListItems.InsertAfter(currentScene, new ListItem(p));
@@ -132,6 +169,37 @@ namespace FilmScriptEditor
             }
             p.Focus();
             textBox.Selection.Select(p.ContentStart, p.ContentEnd);
+        }
+
+        public void RefreshPageCount()
+        {
+            PageCount = Math.Ceiling((textBox.Document.ContentEnd.GetCharacterRect(LogicalDirection.Forward).Y / cm2px - topPaddingCm) / pageSizeCm);
+        }
+
+        private int DrawnLines = 0;
+
+        public void AddPageLines()
+        {
+            for (; DrawnLines < PageCount; DrawnLines++)
+            {
+                double top = (topPaddingCm + DrawnLines * pageSizeCm) * cm2px;
+
+                TextBlock leftText = new TextBlock { Foreground = Brushes.White, FontSize = 16 };
+                TextBlock rightText = new TextBlock { Foreground = Brushes.White, FontSize = 16 };
+                Line line = new Line { Stroke = Brushes.Black, StrokeThickness = 0.1, StrokeDashArray = DoubleCollection.Parse("5, 10") };
+
+                leftText.Text = $"עמוד {DrawnLines + 1}";
+                rightText.Text = $"עמוד {DrawnLines + 1}";
+                line.Y1 = line.Y2 = top;
+                line.X2 = 23 * cm2px;
+                canvas.Children.Add(leftText);
+                canvas.Children.Add(rightText);
+                Canvas.SetTop(leftText, top);
+                Canvas.SetTop(rightText, top);
+                Canvas.SetLeft(rightText, 22 * cm2px);
+                Canvas.SetRight(leftText, 22 * cm2px);
+                canvas.Children.Add(line);
+            }
         }
     }
 
