@@ -24,29 +24,37 @@
             <TextBlock Text="{Binding PageCountText, Mode=OneWay}" />
             <MenuItem Header="סצנה חדשה" Command="self:CustomCommands.NewScene" />
             <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
+            <MenuItem Header="Print" Click="MenuItem_Click" />
         </Menu>
 
         <ScrollViewer Grid.Row="1">
-            <Grid HorizontalAlignment="Center" Margin="0.5cm">
+            <Grid HorizontalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1cm" />
                     <ColumnDefinition Width="21cm" />
                     <ColumnDefinition Width="1cm" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3cm" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                <RichTextBox FontFamily="Courier New" FontSize="12" Name="textBox"
+                <Rectangle Fill="White" Grid.Column="1" Grid.Row="0" StrokeThickness="0" Margin="0" SnapsToDevicePixels="True" />
+                <RichTextBox Name="textBox"
                      Width="21cm"
                      Background="White"
                      Padding="2cm,0,2cm,0"
-                     Grid.Column="1">
+                     Grid.Column="1" Grid.Row="1"
+                             BorderThickness="0">
                     <RichTextBox.InputBindings>
                         <KeyBinding Command="self:CustomCommands.OnEnter" Key="Enter" />
                     </RichTextBox.InputBindings>
                     <FlowDocument FlowDirection="RightToLeft" Name="document"
-                              PageHeight="25.4cm" PageWidth="17cm">
+                              PageHeight="29.7cm" PageWidth="21cm"
+                                FontFamily="Courier New" FontSize="12">
                     </FlowDocument>
                 </RichTextBox>
-                <Canvas Grid.ColumnSpan="3" Name="canvas">
+                <Canvas Grid.ColumnSpan="3" Name="canvas" Grid.Row="1">
                 </Canvas>
             </Grid>
         </ScrollViewer>

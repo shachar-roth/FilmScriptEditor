@@ -1,12 +1,16 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Xps.Packaging;
 
 namespace FilmScriptEditor
 {
@@ -74,7 +78,7 @@ namespace FilmScriptEditor
             switch (currentParagraph)
             {
                 case SceneBody body:
-                    currentParagraph = new DialogCharName();
+                    currentParagraph = DialogCharName.Create();
                     parent.Blocks.InsertAfter(body, currentParagraph);
                     textBox.CaretPosition = currentParagraph.ContentEnd;
                     textBox.Selection.Select(currentParagraph.ContentStart, currentParagraph.ContentEnd);
@@ -89,7 +93,7 @@ namespace FilmScriptEditor
                     }
                     else
                     {
-                        sceneBody = new SceneBody();
+                        sceneBody = SceneBody.Create();
                         parent.Blocks.InsertBefore(currentParagraph, sceneBody);
                     }
                     parent.Blocks.Remove(currentParagraph);
@@ -117,7 +121,7 @@ namespace FilmScriptEditor
                     }
                     else
                     {
-                        currentParagraph = new SceneBody();
+                        currentParagraph = SceneBody.Create();
                         parent.Blocks.Add(currentParagraph);
                     }
                     textBox.CaretPosition = currentParagraph.ContentEnd;
@@ -130,7 +134,7 @@ namespace FilmScriptEditor
                 case DialogCharName charName:
                     if (charName.NextBlock == null)
                     {
-                        currentParagraph = new DialogContent();
+                        currentParagraph = DialogContent.Create();
                         parent.Blocks.InsertAfter(charName, currentParagraph);
                     }
                     textBox.CaretPosition = currentParagraph.ContentEnd;
@@ -140,7 +144,7 @@ namespace FilmScriptEditor
                 case DialogContent content:
                     if (content.NextBlock == null)
                     {
-                        currentParagraph = new DialogCharName();
+                        currentParagraph = DialogCharName.Create();
                         parent.Blocks.InsertAfter(content, currentParagraph);
                     }
                     textBox.CaretPosition = currentParagraph.ContentEnd;
@@ -154,10 +158,10 @@ namespace FilmScriptEditor
             Scences scenes = document.Blocks.FirstBlock as Scences;
             if (scenes == null)
             {
-                scenes = new Scences();
+                scenes = Scences.Create();
                 document.Blocks.Add(scenes);
             }
-            Paragraph p = new SceneHeader();
+            Paragraph p = SceneHeader.Create();
             ListItem currentScene = textBox.CaretPosition.Paragraph?.Parent as ListItem;
             if (currentScene != null)
             {
@@ -188,8 +192,8 @@ namespace FilmScriptEditor
                 TextBlock rightText = new TextBlock { Foreground = Brushes.White, FontSize = 16 };
                 Line line = new Line { Stroke = Brushes.Black, StrokeThickness = 0.1, StrokeDashArray = DoubleCollection.Parse("5, 10") };
 
-                leftText.Text = $"עמוד {DrawnLines + 1}";
-                rightText.Text = $"עמוד {DrawnLines + 1}";
+                leftText.Text = $"עמוד {DrawnLines + 1} \u2193 ";
+                rightText.Text = $" \u2193 עמוד {DrawnLines + 1}";
                 line.Y1 = line.Y2 = top;
                 line.X2 = 23 * cm2px;
                 canvas.Children.Add(leftText);
@@ -201,19 +205,54 @@ namespace FilmScriptEditor
                 canvas.Children.Add(line);
             }
         }
-    }
 
-    internal class Scences : List
-    {
-        public Scences()
+        public void Print()
         {
-            var converter = new LengthConverter();
-            MarkerOffset = (double)converter.ConvertFrom("0.5cm");
-            MarkerStyle = TextMarkerStyle.Decimal;
+            String copyString = XamlWriter.Save(document);
+            FlowDocument copy = XamlReader.Parse(copyString) as FlowDocument;
+            using (MemoryStream stream = new MemoryStream())
+            {
+                Package package = Package.Open(stream, FileMode.Create, FileAccess.ReadWrite);
+                var packUri = new Uri("pack://temp.xps");
+                PackageStore.RemovePackage(packUri);
+                PackageStore.AddPackage(packUri, package);
+                XpsDocument xpsDocument = new XpsDocument(package, CompressionOption.SuperFast, packUri.ToString());
+                var paginator = ((IDocumentPaginatorSource)copy).DocumentPaginator;
+                var writer = XpsDocument.CreateXpsDocumentWriter(xpsDocument);
+                writer.Write(paginator);
+                //new XpsSerializationManager(new XpsPackagingPolicy(xpsDocument), false).SaveAsXaml(paginator);
+                var docSequence = xpsDocument.GetFixedDocumentSequence();
+                xpsDocument.Close();
+                var window = new PrintPreview(docSequence);
+                window.ShowDialog();
+            }
+            /*            PrintDialog printDialog = new PrintDialog();
+                        var paginatorSource = (IDocumentPaginatorSource)document;
+                        printDialog.ShowDialog();
+            */            //printDialog.PrintDocument(paginatorSource.DocumentPaginator, "Film Script");
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Print();
         }
     }
 
-    internal abstract class ParagraphBase : Paragraph
+    public class Scences : List
+    {
+        public static Scences Create()
+        {
+            var converter = new LengthConverter();
+            var result = new Scences
+            {
+                MarkerOffset = (double)converter.ConvertFrom("0.5cm"),
+                MarkerStyle = TextMarkerStyle.Decimal
+            };
+            return result;
+        }
+    }
+
+    public abstract class ParagraphBase : Paragraph
     {
         public ParagraphBase()
         {
@@ -239,43 +278,56 @@ namespace FilmScriptEditor
         }
     }
 
-    internal class SceneHeader : ParagraphBase
+    public class SceneHeader : ParagraphBase
     {
-        public SceneHeader()
+        public static SceneHeader Create()
         {
-            TextDecorations.Add(System.Windows.TextDecorations.Underline);
-            Margin = new Thickness { Bottom = 10, Top = 10 };
-            FontWeight = FontWeights.Bold;
-            Inlines.Add(@"פנים\חוץ. תיאור מקום - יום\לילה");
+            var result = new SceneHeader
+            {
+                Margin = new Thickness { Bottom = 10, Top = 10 },
+                FontWeight = FontWeights.Bold
+            };
+            result.TextDecorations.Add(System.Windows.TextDecorations.Underline);
+            result.Inlines.Add(@"פנים\חוץ. תיאור מקום - יום\לילה");
+            return result;
         }
     }
 
-    internal class SceneBody : ParagraphBase
+    public class SceneBody : ParagraphBase
     {
+        public static SceneBody Create() => new SceneBody();
     }
 
-    internal class DialogCharName : ParagraphBase
+    public class DialogCharName : ParagraphBase
     {
         private const string defaultContent = @"שם דמות";
 
-        public DialogCharName()
+        public static DialogCharName Create()
         {
             var converter = new LengthConverter();
-            Margin = new Thickness { Left = (double)converter.ConvertFrom("6cm"), Top = 10 };
-            FontWeight = FontWeights.Bold;
-            Inlines.Add(defaultContent);
+            DialogCharName result = new DialogCharName
+            {
+                Margin = new Thickness { Left = (double)converter.ConvertFrom("6cm"), Top = 10 },
+                FontWeight = FontWeights.Bold,
+            };
+            result.Inlines.Add(defaultContent);
+            return result;
         }
 
         public bool IsEmpty => Inlines.Count < 2 && Inlines.FirstInline is Run run && (run.Text.Equals(defaultContent) || string.IsNullOrWhiteSpace(run.Text));
     }
 
-    internal class DialogContent : ParagraphBase
+    public class DialogContent : ParagraphBase
     {
-        public DialogContent()
+        public static DialogContent Create()
         {
             var converter = new LengthConverter();
-            Margin = new Thickness { Left = (double)converter.ConvertFrom("3.5cm"), Right = (double)converter.ConvertFrom("4cm"), Bottom = 10 };
-            Inlines.Add(@"מה היא אומרת");
+            var result = new DialogContent
+            {
+                Margin = new Thickness { Left = (double)converter.ConvertFrom("3.5cm"), Right = (double)converter.ConvertFrom("4cm"), Bottom = 10 }
+            };
+            result.Inlines.Add(@"מה היא אומרת");
+            return result;
         }
     }
 
