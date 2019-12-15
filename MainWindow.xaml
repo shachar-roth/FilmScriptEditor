@@ -25,6 +25,8 @@
             <MenuItem Header="סצנה חדשה" Command="self:CustomCommands.NewScene" />
             <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
             <MenuItem Header="Print" Click="MenuItem_Click" />
+            <MenuItem Header="Save" Click="MenuItem_Click_1" />
+            <MenuItem Header="Load" Click="MenuItem_Click_2" />
         </Menu>
 
         <ScrollViewer Grid.Row="1">
@@ -49,8 +51,8 @@
                     <RichTextBox.InputBindings>
                         <KeyBinding Command="self:CustomCommands.OnEnter" Key="Enter" />
                     </RichTextBox.InputBindings>
-                    <FlowDocument FlowDirection="RightToLeft" Name="document"
-                              PageHeight="29.7cm" PageWidth="21cm"
+                    <FlowDocument FlowDirection="RightToLeft"
+                              PageHeight="29.7cm" PageWidth="17cm"
                                 FontFamily="Courier New" FontSize="12">
                     </FlowDocument>
                 </RichTextBox>

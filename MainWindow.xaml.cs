@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Packaging;
@@ -23,9 +24,11 @@ namespace FilmScriptEditor
         public const double topPaddingCm = 0;
         public const double cm2px = 37.795275590551178;
 
-        private double pageCount;
+        private FlowDocument document => textBox.Document;
 
-        public double PageCount
+        private int pageCount;
+        
+        public int PageCount
         {
             get => pageCount;
             set
@@ -177,7 +180,7 @@ namespace FilmScriptEditor
 
         public void RefreshPageCount()
         {
-            PageCount = Math.Ceiling((textBox.Document.ContentEnd.GetCharacterRect(LogicalDirection.Forward).Y / cm2px - topPaddingCm) / pageSizeCm);
+            PageCount = (int)Math.Ceiling((textBox.Document.ContentEnd.GetCharacterRect(LogicalDirection.Forward).Y / cm2px - topPaddingCm) / pageSizeCm);
         }
 
         private int DrawnLines = 0;
@@ -208,33 +211,68 @@ namespace FilmScriptEditor
 
         public void Print()
         {
-            String copyString = XamlWriter.Save(document);
+            string copyString = XamlWriter.Save(document);
             FlowDocument copy = XamlReader.Parse(copyString) as FlowDocument;
-            using (MemoryStream stream = new MemoryStream())
+            var converter = new LengthConverter();
+            copy.ColumnWidth = (double)converter.ConvertFrom("17cm");
+            PrintDialog printDialog = new PrintDialog();
+            copy.PagePadding = new Thickness(2 * cm2px, 3 * cm2px, 2 * cm2px, 1.3 * cm2px);
+            copy.PageHeight = (double)converter.ConvertFrom("29.7cm");
+            copy.PageWidth = (double)converter.ConvertFrom("21cm");
+            var paginatorSource = (IDocumentPaginatorSource)copy;
+            var printResult = printDialog.ShowDialog();
+            if (printResult != true)
+                return;
+
+            printDialog.PrintDocument(paginatorSource.DocumentPaginator, "Film Script");
+        }
+
+        public void Save()
+        {
+            SaveFileDialog fileDialog = new SaveFileDialog();
+            fileDialog.DefaultExt = ".xaml";
+            fileDialog.AddExtension = true;
+            var result = fileDialog.ShowDialog();
+            if (result != true)
+                return;
+
+            using (FileStream stream = File.Create(fileDialog.FileName))
             {
-                Package package = Package.Open(stream, FileMode.Create, FileAccess.ReadWrite);
-                var packUri = new Uri("pack://temp.xps");
-                PackageStore.RemovePackage(packUri);
-                PackageStore.AddPackage(packUri, package);
-                XpsDocument xpsDocument = new XpsDocument(package, CompressionOption.SuperFast, packUri.ToString());
-                var paginator = ((IDocumentPaginatorSource)copy).DocumentPaginator;
-                var writer = XpsDocument.CreateXpsDocumentWriter(xpsDocument);
-                writer.Write(paginator);
-                //new XpsSerializationManager(new XpsPackagingPolicy(xpsDocument), false).SaveAsXaml(paginator);
-                var docSequence = xpsDocument.GetFixedDocumentSequence();
-                xpsDocument.Close();
-                var window = new PrintPreview(docSequence);
-                window.ShowDialog();
+                XamlWriter.Save(document, stream);
             }
-            /*            PrintDialog printDialog = new PrintDialog();
-                        var paginatorSource = (IDocumentPaginatorSource)document;
-                        printDialog.ShowDialog();
-            */            //printDialog.PrintDocument(paginatorSource.DocumentPaginator, "Film Script");
+
+            DiffMatchPatch.diff_match_patch diff_Match_Patch = new DiffMatchPatch.diff_match_patch();
+            diff_Match_Patch.
+        }
+
+        public void Load()
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.DefaultExt = ".xaml";
+            fileDialog.AddExtension = true;
+            var result = fileDialog.ShowDialog();
+            if (result != true)
+                return;
+
+            using (FileStream stream = File.OpenRead(fileDialog.FileName))
+            {
+                textBox.Document = XamlReader.Load(stream) as FlowDocument;
+            }
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             Print();
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            Save();
+        }
+
+        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        {
+            Load();
         }
     }
 
@@ -257,6 +295,17 @@ namespace FilmScriptEditor
         public ParagraphBase()
         {
             Unloaded += OnUnLoaded;
+        }
+
+        public TextBlock Convert()
+        {
+            return new TextBlock(this.Inlines.FirstInline)
+            {
+                Margin = Margin,
+                Padding = Padding,
+                TextDecorations = TextDecorations,
+                FontWeight = FontWeight
+            };
         }
 
         private void OnUnLoaded(object sender, RoutedEventArgs e)
