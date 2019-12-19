@@ -24,10 +24,11 @@ namespace FilmScriptEditor
         public const double topPaddingCm = 0;
         public const double cm2px = 37.795275590551178;
 
+        private FileFormat CurrentFile;
         private FlowDocument document => textBox.Document;
 
         private int pageCount;
-        
+
         public int PageCount
         {
             get => pageCount;
@@ -42,7 +43,7 @@ namespace FilmScriptEditor
             }
         }
 
-        public string PageCountText => $"מספר עמודים כולל: {PageCount}";
+        public string PageCountText => $"עמודים : {PageCount}";
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -230,33 +231,43 @@ namespace FilmScriptEditor
         public void Save()
         {
             SaveFileDialog fileDialog = new SaveFileDialog();
-            fileDialog.DefaultExt = ".xaml";
+            fileDialog.DefaultExt = FileFormat.Extension;
             fileDialog.AddExtension = true;
             var result = fileDialog.ShowDialog();
             if (result != true)
                 return;
 
+            using (FileStream stream = File.Open(fileDialog.FileName, FileMode.OpenOrCreate))
+            {
+                using (StreamReader reader = new StreamReader(stream, leaveOpen: true))
+                {
+                    CurrentFile = FileFormat.DeSerialize(reader);
+                    CurrentFile.Commit(XamlWriter.Save(document));
+                }
+            }
             using (FileStream stream = File.Create(fileDialog.FileName))
             {
-                XamlWriter.Save(document, stream);
+                using (StreamWriter writer = new StreamWriter(stream))
+                {
+                    CurrentFile.Serialize(writer);
+                }
             }
-
-            DiffMatchPatch.diff_match_patch diff_Match_Patch = new DiffMatchPatch.diff_match_patch();
-            diff_Match_Patch.
         }
 
         public void Load()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.DefaultExt = ".xaml";
+            fileDialog.DefaultExt = FileFormat.Extension;
             fileDialog.AddExtension = true;
             var result = fileDialog.ShowDialog();
             if (result != true)
                 return;
 
             using (FileStream stream = File.OpenRead(fileDialog.FileName))
+            using (StreamReader reader = new StreamReader(stream, leaveOpen: true))
             {
-                textBox.Document = XamlReader.Load(stream) as FlowDocument;
+                CurrentFile = FileFormat.DeSerialize(reader);
+                textBox.Document = XamlReader.Parse(CurrentFile.Current) as FlowDocument;
             }
         }
 
@@ -273,6 +284,16 @@ namespace FilmScriptEditor
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
             Load();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            panel.Children.Clear();
+            panel.Children.Add(new Button { Content = "Back" });
+            foreach (var version in CurrentFile.PreviousVersions)
+            {
+                panel.Children.Add(new Button { Content = version.Date.ToString() });
+            }
         }
     }
 

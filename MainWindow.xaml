@@ -20,16 +20,16 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="100" />
+        </Grid.ColumnDefinitions>
         <Menu HorizontalAlignment="Right">
-            <TextBlock Text="{Binding PageCountText, Mode=OneWay}" />
             <MenuItem Header="סצנה חדשה" Command="self:CustomCommands.NewScene" />
             <MenuItem Header="ChangeMode" Command="self:CustomCommands.ChangeMode" />
-            <MenuItem Header="Print" Click="MenuItem_Click" />
-            <MenuItem Header="Save" Click="MenuItem_Click_1" />
-            <MenuItem Header="Load" Click="MenuItem_Click_2" />
         </Menu>
 
-        <ScrollViewer Grid.Row="1">
+        <ScrollViewer Grid.Row="1" FlowDirection="RightToLeft">
             <Grid HorizontalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1cm" />
@@ -60,5 +60,45 @@
                 </Canvas>
             </Grid>
         </ScrollViewer>
+        <DockPanel Name="panel" Grid.Row="1" Grid.Column="1" VerticalAlignment="Stretch" LastChildFill="False">
+            <DockPanel.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="BorderBrush" Value="White" />
+                    <Setter Property="Background" Value="{x:Null}" />
+                    <Setter Property="Height" Value="50" />
+                    <Setter Property="DockPanel.Dock" Value="Top" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <TextBlock
+                                        VerticalAlignment="Stretch"
+                                        HorizontalAlignment="Stretch"
+                                        Background="{TemplateBinding Background}"
+                                        TextAlignment="Right"
+                                        Padding="0,15,25,0"
+                                           Text="{TemplateBinding Content}" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="PeachPuff" />
+                            <Setter Property="Foreground" Value="Black" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="Beige" />
+                            <Setter Property="Foreground" Value="Red" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DockPanel.Resources>
+            <Button Click="MenuItem_Click_1">שמור</Button>
+            <Button Click="MenuItem_Click_2">טען</Button>
+            <Button Click="MenuItem_Click">הדפס</Button>
+            <Button >סצנה חדשה</Button>
+            <Button Click="Button_Click">גרסאות</Button>
+            <Button DockPanel.Dock="Bottom" Content="{Binding PageCountText, Mode=OneWay}" />
+        </DockPanel>
     </Grid>
 </Window>
